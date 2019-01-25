@@ -11,13 +11,13 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
+import android.text.TextUtils;
 
-import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.WritableMap;
 
 import java.io.File;
@@ -93,7 +93,7 @@ public class WiFiP2PManagerModule extends ReactContextBaseJavaModule implements 
 
     @ReactMethod
     public void createGroup(final Callback callback) {
-        manager.createGroup(channel,  new WifiP2pManager.ActionListener()  {
+        manager.createGroup(channel, new WifiP2pManager.ActionListener() {
             public void onSuccess() {
                 callback.invoke();
                 //Group creation successful
@@ -211,8 +211,9 @@ public class WiFiP2PManagerModule extends ReactContextBaseJavaModule implements 
                 wifiP2pInfo.groupOwnerAddress.getHostAddress());
         serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
         getCurrentActivity().startService(serviceIntent);
+        callback.invoke(1);
 
-        callback.invoke("soon will be");
+//        callback.invoke("soon will be");
     }
 
     @ReactMethod
@@ -235,14 +236,21 @@ public class WiFiP2PManagerModule extends ReactContextBaseJavaModule implements 
     @ReactMethod
     public void sendMessage(String message, Callback callback) {
         System.out.println("Sending message: " + message);
-        Intent serviceIntent = new Intent(getCurrentActivity(), MessageTransferService.class);
-        serviceIntent.setAction(MessageTransferService.ACTION_SEND_MESSAGE);
-        serviceIntent.putExtra(MessageTransferService.EXTRAS_DATA, message);
-        serviceIntent.putExtra(MessageTransferService.EXTRAS_GROUP_OWNER_ADDRESS, wifiP2pInfo.groupOwnerAddress.getHostAddress());
-        serviceIntent.putExtra(MessageTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
-        getCurrentActivity().startService(serviceIntent);
+        String hostAddress = wifiP2pInfo.groupOwnerAddress != null ? wifiP2pInfo.groupOwnerAddress.getHostAddress() : "";
+        if (!TextUtils.isEmpty(hostAddress)) {
+            Intent serviceIntent = new Intent(getCurrentActivity(), MessageTransferService.class);
+            serviceIntent.setAction(MessageTransferService.ACTION_SEND_MESSAGE);
+            serviceIntent.putExtra(MessageTransferService.EXTRAS_DATA, message);
+            serviceIntent.putExtra(MessageTransferService.EXTRAS_GROUP_OWNER_ADDRESS, hostAddress);
+            serviceIntent.putExtra(MessageTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
+            getCurrentActivity().startService(serviceIntent);
+            callback.invoke(1);
+        } else {
+            callback.invoke("error");
+        }
 
-        callback.invoke("soon will be");
+//        callback.invoke("soon will be");
+
     }
 
     @ReactMethod
